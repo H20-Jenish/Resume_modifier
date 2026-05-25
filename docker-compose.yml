@@ -1,0 +1,126 @@
+name: resume_modifier_stack
+
+services:
+  db:
+    container_name: resume_modifier_stack_db
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      TZ: ${TIMEZONE:-America/Toronto}
+      PGTZ: ${TIMEZONE:-America/Toronto}
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: resume_db
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - resume_modifier_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d resume_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    container_name: resume_modifier_stack_backend
+    restart: always
+    build: ./backend
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:securepassword123@db:5432/resume_db
+      - TZ=${TIMEZONE:-America/Toronto}
+      - TIMEZONE=${TIMEZONE:-America/Toronto}
+      - N8N_WEBHOOK_SECRET=${N8N_WEBHOOK_SECRET:-resume-modifier-n8n-secret}
+      - N8N_WEBHOOK_URL=http://resume_modifier_n8n:5678/webhook/job-scan
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./backend:/app
+      - backups_data:/app/data/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - resume_modifier_net
+
+  frontend:
+    container_name: resume_modifier_stack_frontend
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-4310}:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    environment:
+      - TZ=${TIMEZONE:-America/Toronto}
+    depends_on:
+      - backend
+    networks:
+      - resume_modifier_net
+
+  n8n:
+    container_name: resume_modifier_n8n
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      - TZ=${TIMEZONE:-America/Toronto}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_SECURE_COOKIE=false
+      - GENERIC_TIMEZONE=${TIMEZONE:-America/Toronto}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change-me-n8n-production-key32}
+      - BACKEND_URL=http://resume_modifier_stack_backend:8000
+      - N8N_WEBHOOK_SECRET=${N8N_WEBHOOK_SECRET:-resume-modifier-n8n-secret}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows:ro
+    depends_on:
+      - backend
+    networks:
+      - resume_modifier_net
+
+  crawl4ai:
+    container_name: resume_modifier_crawl4ai
+    image: unclecode/crawl4ai:latest
+    restart: always
+    ports:
+      - "127.0.0.1:11235:11235"
+    environment:
+      - TZ=${TIMEZONE:-America/Toronto}
+      - CRAWL4AI_API_TOKEN=${CRAWL4AI_TOKEN:-crawl4ai-secret}
+      # Limit browser pool to 1 warm instance (default is much higher)
+      - CRAWL4AI_BROWSER_POOL_SIZE=1
+      - BROWSER_POOL_MIN_SIZE=1
+      - BROWSER_POOL_MAX_SIZE=2
+      # Only 1 concurrent crawl at a time (we send 1 job at a time anyway)
+      - MAX_CONCURRENT_TASKS=1
+      # Single uvicorn worker — we don't need multi-process
+      - UVICORN_WORKERS=1
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    networks:
+      - resume_modifier_net
+
+volumes:
+  postgres_data:
+  backups_data:
+  n8n_data:
+
+networks:
+  resume_modifier_net:

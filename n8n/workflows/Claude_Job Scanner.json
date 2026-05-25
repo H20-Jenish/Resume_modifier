@@ -1,0 +1,388 @@
+{
+  "name": "Claude_Job Scanner",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-scan",
+        "options": {
+          "responseData": "{\"status\":\"processing\",\"message\":\"Scan started. Check listings feed for results.\"}"
+        }
+      },
+      "id": "3e4e5ba5-357c-4493-ab29-e156b21b9b82",
+      "name": "Receive Scan from Backend",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "job-scan-ondemand"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Emit one item per URL so each agent call handles exactly one URL.\nconst body = $input.first().json.body;\nconst urls = Array.isArray(body.urls) ? body.urls : [];\nconst roles = Array.isArray(body.roles) ? body.roles : [];\nif (urls.length === 0) throw new Error('No URLs provided in scan payload.');\nreturn urls.map(url => ({ json: { user_id: body.user_id, url, resume_text: body.resume_text || '', location: body.location || '', roles } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "9f61cc3a-2736-43ba-8c3a-4a5388173945",
+      "name": "Split URLs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Scrape the following job portal URL for open job listings:\n\nURL: {{ $json.url }}\nTarget location: {{ $json.location }}\nTarget roles: {{ $json.roles.join(', ') }}\n\nUse the Crawl4AI tool to fetch content from the URL. Send it a POST request with body:\n{\"urls\": [\"{{ $json.url }}\"], \"crawler_params\": {\"headless\": true}, \"extra\": {\"word_count_threshold\": 10}}\n\nFrom the crawled content, extract all visible job listings and return them as structured JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a job scraping assistant. Use the Crawl4AI tool to fetch job listings from job portal pages.\n\nFor each crawl result extract every job posting found:\n- job_title: exact job title\n- company: company name\n- location: job location\n- skills_required: list of required skills\n- jd_text: cleaned job description (max 1000 chars)\n\nReturn ONLY:\n{\n  \"jobs\": [\n    { \"job_title\": \"...\", \"company\": \"...\", \"location\": \"...\", \"skills_required\": [\"skill1\"], \"jd_text\": \"...\" }\n  ]\n}\n\nIf no jobs found return {\"jobs\": []}. Do NOT invent data or add extra keys."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ccb9401d-c1f5-400b-b32a-e8b7e8377402",
+      "name": "Job Scraping Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the scraped job listings below against the candidate profile.\n\nScraped jobs from {{ $('Split URLs').item.json.url }}:\n{{ typeof $json.output === 'object' ? JSON.stringify($json.output) : $json.output }}\n\nCandidate profile:\n- Resume: {{ $('Split URLs').item.json.resume_text }}\n- Location preference: {{ $('Split URLs').item.json.location }}\n- Target roles: {{ $('Split URLs').item.json.roles.join(', ') }}\n\nFor EACH job in the scraped list produce one analysis object and wrap all results in an \"analyses\" array.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a job listing analyzer. Given scraped job data and a candidate profile, evaluate each job.\n\nFor each job return this exact schema:\n{\n  \"job_title\": \"string\",\n  \"company\": \"string\",\n  \"location\": \"string\",\n  \"source_url\": \"string\",\n  \"skills_required\": [\"string\"],\n  \"jd_text\": \"string (max 1000 chars)\",\n  \"legitimacy_status\": \"active|closed|suspicious|uncertain\",\n  \"legitimacy_note\": \"string\",\n  \"fit_score\": 0.0,\n  \"fit_breakdown\": { \"skills_match\": 0.0, \"experience_level\": 0.0, \"industry_fit\": 0.0, \"role_clarity\": 0.0, \"overall\": 0.0 },\n  \"fit_recommendation\": \"apply|review|skip\",\n  \"fit_summary\": \"string (2-3 sentences)\"\n}\n\nWrap all results in: {\"analyses\": [...]}\n\nScoring: all scores 0.0-5.0. apply>=3.5, skip<2.0, review otherwise. Consider candidate location, titles and experience."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "c486f461-b58d-4869-b208-ee7a67e2be4e",
+      "name": "Job Analyst Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten analyst output into one item per job for individual POSTs to backend.\nconst raw = $json.output;\nconst analyses = Array.isArray(raw?.analyses) ? raw.analyses : (Array.isArray(raw) ? raw : []);\nconst userId = $('Split URLs').item.json.user_id;\nconst sourceUrl = $('Split URLs').item.json.url;\nif (analyses.length === 0) return [];\nreturn analyses.map(job => ({ json: { user_id: userId, source_url: job.source_url || sourceUrl, job_title: job.job_title || '', company: job.company || '', location: job.location || '', skills_required: job.skills_required || [], jd_text: job.jd_text || '', fit_score: typeof job.fit_score === 'number' ? job.fit_score : 0, fit_breakdown: job.fit_breakdown || {}, legitimacy_status: job.legitimacy_status || 'uncertain', legitimacy_note: job.legitimacy_note || '', fit_recommendation: job.fit_recommendation || 'review', fit_summary: job.fit_summary || '' } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "d93b32ca-f215-49a9-bcc1-41d186720a7a",
+      "name": "Flatten Results"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://resume_modifier_stack_backend:8000/n8n/results",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-n8n-secret",
+              "value": "S+cl4QYmFvX5HYtTDDjvSFzwlwoG/HTuYikAQbStAOQ="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "5bef9aac-15d3-46ea-8582-30f6c5127fcc",
+      "name": "Sending Analyzed Jobs to Backend"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://resume_modifier_crawl4ai:11235/crawl",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer d1195f3915dc4aa3a058a6ccbc4396c1ceb11e57e29541d39432584d359b7234"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        544,
+        192
+      ],
+      "id": "d2df8e37-5569-4af2-b434-ed5e92f1ac88",
+      "name": "Crawl4AI"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "qwen/qwen3.5-9b",
+          "mode": "list",
+          "cachedResultName": "qwen/qwen3.5-9b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        192
+      ],
+      "id": "9b6c685d-5dfb-415b-b571-bf4fa7adf87f",
+      "name": "Qwen3.5:9b",
+      "credentials": {
+        "openAiApi": {
+          "id": "UuQJFuoEWIsmXYCW",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "llama-3.2-3b-instruct",
+          "mode": "list",
+          "cachedResultName": "llama-3.2-3b-instruct"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        192
+      ],
+      "id": "ed9acb8b-8bd1-4bcc-b468-b6e2c08e0455",
+      "name": "LLama3.2:3B Instruct",
+      "credentials": {
+        "openAiApi": {
+          "id": "UuQJFuoEWIsmXYCW",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id }}-scrape"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        192
+      ],
+      "id": "5f6399a4-1002-4058-94ad-7215543a5e9b",
+      "name": "Memory#1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Split URLs').item.json.user_id }}-analyse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        192
+      ],
+      "id": "c0df7efd-27c3-41cb-a89f-fc006b3104f3",
+      "name": "Memory#2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"jobs\":[{\"job_title\":\"Software Engineer\",\"company\":\"Acme Corp\",\"location\":\"Toronto, ON\",\"skills_required\":[\"Python\",\"Docker\"],\"jd_text\":\"We are looking for a skilled software engineer.\"}]}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        192
+      ],
+      "id": "55a0b9b8-ea10-4693-9ff7-cfa3b3249ca4",
+      "name": "SDE#1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"analyses\":[{\"job_title\":\"Software Engineer\",\"company\":\"Acme Corp\",\"location\":\"Toronto, ON\",\"source_url\":\"https://ca.indeed.com/\",\"skills_required\":[\"Python\",\"Docker\"],\"jd_text\":\"Job description here\",\"legitimacy_status\":\"active\",\"legitimacy_note\":\"Normal open listing\",\"fit_score\":4.2,\"fit_breakdown\":{\"skills_match\":4.5,\"experience_level\":4.0,\"industry_fit\":4.0,\"role_clarity\":4.5,\"overall\":4.2},\"fit_recommendation\":\"apply\",\"fit_summary\":\"Strong match based on skills and experience.\"}]}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        192
+      ],
+      "id": "cb347e2f-5225-4407-9e96-b5f9ef6d1fc0",
+      "name": "SDE#2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Scan from Backend": {
+      "main": [
+        [
+          {
+            "node": "Split URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs": {
+      "main": [
+        [
+          {
+            "node": "Job Scraping Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawl4AI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Job Scraping Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Scraping Agent": {
+      "main": [
+        [
+          {
+            "node": "Job Analyst Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Analyst Agent": {
+      "main": [
+        [
+          {
+            "node": "Flatten Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Results": {
+      "main": [
+        [
+          {
+            "node": "Sending Analyzed Jobs to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qwen3.5:9b": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Job Analyst Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLama3.2:3B Instruct": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Job Scraping Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory#1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Job Scraping Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory#2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Job Analyst Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SDE#1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Job Scraping Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SDE#2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Job Analyst Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1ca5d129-6216-43f6-96d9-b5d0d09b5870",
+  "meta": {
+    "instanceId": "423f034e4db2313d265e4b4952c3a84d4cace29078240254b8a23a8964e02252"
+  },
+  "id": "GzSfcdA6AuF6hqYY",
+  "tags": []
+}

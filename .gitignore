@@ -1,0 +1,79 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+.venv/*
+
+# Pytest
+.pytest_cache/
+# Coverage
+.coverage
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# Docker
+docker-compose.override.yml
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Backups
+*.bak
+
+# Backing store
+postgres_data/
+backups_data/
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+ 
+# Local raw data - do not track
+RAW/
+Raw_Files/
+raw/
+
+# Runtime data
+backend/data/backups/
+n8n/gen_v5_workflows.py
+n8n/workflows/OLD/
+
+# Manual migrations are not required to build/run the Docker stack
+migrations/

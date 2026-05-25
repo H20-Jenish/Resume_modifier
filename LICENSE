@@ -1,0 +1,57 @@
+MIT License
+
+Copyright (c) 2026 Vyaktigatavṛtta
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party Dependencies
+
+This project includes third-party dependencies with their own licenses:
+
+| Dependency | License | Notes |
+|------------|---------|-------|
+| FastAPI | MIT | Backend framework |
+| Uvicorn | MIT | ASGI server |
+| SQLAlchemy | MIT | ORM library |
+| PostgreSQL | PostgreSQL License | Database engine |
+| WeasyPrint | BSD-style | PDF rendering engine |
+| OpenAI SDK | Apache 2.0 / MIT | HTTP client for AI calls |
+| pydyf | Unknown | Used with WeasyPrint (pinned to 0.11.0) |
+| pdfplumber | BSD | PDF parsing |
+| Tailwind CSS | MIT | Frontend styling |
+
+---
+
+## Disclaimer
+
+This software is intended for educational and self-hosted use only. By using this application, you agree that:
+
+1. **AI Output Quality**: The AI-generated resume optimization results are provided "as is" without warranty of accuracy, completeness, or suitability for any purpose.
+
+2. **Data Privacy**: All data is stored locally in your PostgreSQL container. No data is transmitted to external servers except to your configured AI inference endpoint (e.g., LM Studio, Ollama).
+
+3. **ATS Compatibility**: While the optimized resumes are formatted for ATS systems, there is no guarantee of passing any specific Applicant Tracking System.
+
+4. **Self-Hosted Requirement**: This software requires a running local or remote AI inference server to function properly.
+
+5. **No Endorsement**: Use of this tool does not constitute endorsement by any third party.
+
+6. **Production Use**: While open-source and free to modify, users are responsible for configuring the system appropriately for their production environment, including changing default passwords and security settings.
