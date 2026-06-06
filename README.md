@@ -24,9 +24,9 @@ The Compose stack starts these services:
 
 - `frontend`: serves the SPA on `http://127.0.0.1:${FRONTEND_PORT}`
 - `backend`: FastAPI API on `http://127.0.0.1:8000`
-- `db`: PostgreSQL on `127.0.0.1:5432`
-- `n8n`: workflow automation on `127.0.0.1:5678`
-- `crawl4ai`: crawl API on `127.0.0.1:11235`
+- `db`: PostgreSQL on `127.0.0.1:${DB_HOST_PORT}`
+- `n8n`: workflow automation on `127.0.0.1:${N8N_HOST_PORT}`
+- `crawl4ai`: crawl API on `127.0.0.1:${CRAWL4AI_PORT}`
 
 All ports are bound to `127.0.0.1` only.
 
@@ -96,11 +96,14 @@ Use a local `.env` file for overrides. The committed example file documents the 
 | --- | --- |
 | `TIMEZONE` | Time zone used by the containers |
 | `FRONTEND_PORT` | Host port for the frontend container |
+| `DB_HOST_PORT` | Host port for PostgreSQL |
+| `N8N_HOST_PORT` | Host port for n8n |
+| `CRAWL4AI_PORT` | Host port for the crawl4ai container |
 | `N8N_WEBHOOK_SECRET` | Shared secret for backend to n8n webhook requests |
 | `N8N_ENCRYPTION_KEY` | n8n encryption key |
 | `CRAWL4AI_TOKEN` | API token for the crawl4ai service |
 
-Note: on some Windows machines, port `4310` can fall inside a reserved range. If that happens, use another local port such as `3210` in your `.env` file.
+Note: Windows can dynamically reserve some local ports, which can make Docker port binding fail after a reboot. This repo uses higher defaults (`FRONTEND_PORT=18080`, `DB_HOST_PORT=15432`, `N8N_HOST_PORT=15678`, `CRAWL4AI_PORT=21235`) to avoid recurring bind failures.
 
 ## Application flow
 
@@ -284,9 +287,11 @@ Interactive API docs (Swagger UI) are available at `http://localhost:8000/docs` 
 
 | Service | Container Port | Host Binding |
 |---|---|---|
-| Frontend (nginx) | 80 | `127.0.0.1:4310` (configurable via `FRONTEND_PORT`) |
+| Frontend (nginx) | 80 | `127.0.0.1:18080` (configurable via `FRONTEND_PORT`) |
 | Backend (FastAPI) | 8000 | `127.0.0.1:8000` |
-| Database (PostgreSQL) | 5432 | `127.0.0.1:5432` |
+| Database (PostgreSQL) | 5432 | `127.0.0.1:15432` (configurable via `DB_HOST_PORT`) |
+| n8n | 5678 | `127.0.0.1:15678` (configurable via `N8N_HOST_PORT`) |
+| crawl4ai | 11235 | `127.0.0.1:21235` (configurable via `CRAWL4AI_PORT`) |
 
 All ports are bound to `127.0.0.1` — accessible only from the local machine.
 
