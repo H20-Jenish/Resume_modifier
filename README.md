@@ -7,8 +7,11 @@ Resume Modifier is a Dockerized web app for tailoring a resume and cover letter 
 - Accepts a job description, resume, and optional job URL.
 - Uses a configured AI provider to generate an optimized resume, cover letter, gap analysis, interview prep, and LinkedIn outreach content.
 - Stores optimization history per user account.
-- Renders downloadable PDF outputs from selectable templates.
+- Renders downloadable PDF outputs from nine selectable templates, including ATS-focused designs inspired by common large-tech conventions (not official company templates).
+- Checks tailored resume claims against the source resume, attempts to correct unsupported claims, and flags anything that still needs review.
 - Includes backup/restore helpers plus workflow integrations for job-scanning support.
+
+The automated fact check is a best-effort AI review, not a guarantee. Review the final resume against the original source before submitting it.
 
 ## Stack
 

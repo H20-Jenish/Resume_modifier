@@ -87,14 +87,13 @@
         .resume-paper h1{font-size:19pt!important;line-height:1.24!important;margin:0 0 8pt!important}
         .resume-paper > p:first-of-type{margin:0 0 12pt!important}
         .resume-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
-        .resume-header h1{margin:0!important;max-width:50%}
-        .resume-contact{width:48%;text-align:right}
-        .resume-contact p{margin:0 0 2px 0!important;font-size:11pt!important;line-height:1.35!important;color:#475569}
+        .resume-header h1{flex:1 1 52%;width:52%;margin:0!important;max-width:52%}
+        .resume-contact{display:flex;flex:0 1 48%;flex-direction:column;align-items:flex-end;width:48%;max-width:48%;text-align:right}
+        .resume-contact p{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0 0 3px 0!important;padding:0;font-size:10pt!important;line-height:1.4!important;color:#475569;text-align:right;overflow-wrap:anywhere;word-break:break-word}
         .resume-contact p strong{font-weight:700;color:#334155}
-        .resume-contact p{display:flex;justify-content:flex-end;align-items:flex-start;gap:4px}
-        .resume-contact-label{white-space:nowrap}
-        .resume-contact-value{max-width:360px;text-align:right;word-break:normal;overflow-wrap:normal}
-        .resume-contact-value.linkedin-value{white-space:nowrap}
+        .resume-contact-label{white-space:nowrap;margin-right:3px}
+        .resume-contact-value{max-width:100%;text-align:right;overflow-wrap:anywhere;word-break:break-word}
+        .resume-contact-value.linkedin-value{white-space:normal}
         .cl-paper h1{font-size:16pt!important;line-height:1.3}
         .resume-paper p,.resume-paper li,.cl-paper p,.cl-paper li{font-size:12pt!important;line-height:1.45}
         .resume-paper h2,.resume-paper h3,.cl-paper h2,.cl-paper h3{font-size:15pt!important;line-height:1.3}
@@ -156,6 +155,41 @@
         .tpl-creative li{font-size:10pt;line-height:1.52;color:#334155;margin-bottom:4px;padding-left:14px;position:relative}
         .tpl-creative li::before{content:'◆';position:absolute;left:0;top:1px;color:#3b82f6;font-size:8px}
         .tpl-creative strong{font-weight:750;color:#0f172a}
+        /* Original ATS-focused corporate styles inspired by common big-tech conventions */
+        .tpl-google{font-family:Arial,Helvetica,sans-serif;padding:48px}
+        .tpl-google h1{font-size:27pt;font-weight:700;color:#202124;text-align:left;letter-spacing:-.3px;max-width:56%}
+        .tpl-google h2{font-size:10pt;font-weight:700;color:#1a73e8;text-transform:uppercase;letter-spacing:1.2px;border-bottom:1px solid #dadce0;padding-bottom:5px;margin:22px 0 10px}
+        .tpl-google h3{font-size:11pt;font-weight:700;color:#202124;margin:13px 0 3px}
+        .tpl-google p{font-size:10pt;line-height:1.55;color:#3c4043;margin-bottom:5px}
+        .tpl-google ul{list-style:disc;padding-left:18px;margin:4px 0 10px}
+        .tpl-google li{font-size:10pt;line-height:1.5;color:#3c4043;margin-bottom:3px}
+        .tpl-google strong{font-weight:700;color:#202124}
+        .tpl-microsoft{font-family:Calibri,Arial,Helvetica,sans-serif;padding:48px}
+        .tpl-microsoft h1{font-size:27pt;font-weight:700;color:#242424;text-align:left;max-width:56%}
+        .tpl-microsoft h2{font-size:10pt;font-weight:700;color:#0067b8;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #0078d4;padding-bottom:4px;margin:22px 0 10px}
+        .tpl-microsoft h3{font-size:11pt;font-weight:700;color:#242424;margin:13px 0 3px}
+        .tpl-microsoft p{font-size:10pt;line-height:1.55;color:#333;margin-bottom:5px}
+        .tpl-microsoft ul{list-style:disc;padding-left:18px;margin:4px 0 10px}
+        .tpl-microsoft li{font-size:10pt;line-height:1.5;color:#333;margin-bottom:3px}
+        .tpl-microsoft strong{font-weight:700;color:#242424}
+        .tpl-apple{font-family:Arial,Helvetica,sans-serif;padding:52px 56px}
+        .tpl-apple h1{font-size:26pt;font-weight:600;color:#1d1d1f;text-align:left;letter-spacing:-.4px;max-width:56%}
+        .tpl-apple h2{font-size:9pt;font-weight:700;color:#1d1d1f;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #d2d2d7;padding-bottom:5px;margin:23px 0 10px}
+        .tpl-apple h3{font-size:10.5pt;font-weight:600;color:#1d1d1f;margin:13px 0 3px}
+        .tpl-apple p{font-size:10pt;line-height:1.6;color:#424245;margin-bottom:5px}
+        .tpl-apple ul{list-style:disc;padding-left:18px;margin:4px 0 10px}
+        .tpl-apple li{font-size:10pt;line-height:1.55;color:#424245;margin-bottom:3px}
+        .tpl-apple strong{font-weight:700;color:#1d1d1f}
+        .resume-paper .resume-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+        .resume-paper .resume-header h1{flex:1 1 52%;width:52%;max-width:52%}
+        .resume-paper .resume-contact{display:flex;flex:0 1 48%;flex-direction:column;align-items:flex-end;width:48%;max-width:48%;text-align:right}
+        .resume-paper .resume-contact p{display:block;width:100%;min-width:0;text-align:right;overflow-wrap:anywhere;word-break:break-word}
+        .resume-paper .resume-contact-value{max-width:100%;text-align:right;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+        @media(max-width:540px){
+            .resume-paper .resume-header{display:block}
+            .resume-paper .resume-header h1{width:100%;max-width:100%}
+            .resume-paper .resume-contact{width:100%;max-width:100%}
+        }
         /* Template Cards */
         .tone-toggle{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border:1px solid #1f1f1f;border-radius:12px;background:#111}
         .tone-toggle-btn{position:relative;display:flex;align-items:center;justify-content:center;padding:7px 8px;border:none;border-radius:8px;background:transparent;color:#7c8798;font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;transition:all .18s ease}
@@ -529,6 +563,10 @@
                             <label class="text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider block">Company Name</label>
                             <input id="companyName" type="text" class="field text-xs" placeholder="e.g., XYZ Company" required />
                         </div>
+                        <div>
+                            <label class="text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider block">Job URL</label>
+                            <input id="jobUrl" type="url" class="field text-xs" placeholder="https://company.com/jobs/role" required />
+                        </div>
                         <div class="col-span-2">
                             <div class="flex items-center gap-2 mb-1.5">
                                 <label class="text-xs font-semibold text-zinc-500 uppercase tracking-wider block m-0">Human Tone</label>
@@ -570,10 +608,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider block">Job URL</label>
-                        <input id="jobUrl" type="url" class="field text-xs" placeholder="https://company.com/jobs/role" />
                     </div>
                     <div class="flex flex-col min-h-0">
                         <label class="text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider">Job Description</label>
@@ -764,6 +798,7 @@
 
                 <!-- Sec 2 Resume -->
                 <div id="out-sec2" class="flex-1 overflow-y-auto">
+                    <div id="factualityBanner" role="status" aria-live="polite" style="display:none;margin:14px 24px 0;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.5"></div>
                     <div id="templateStudio" class="px-6 pt-4 pb-3 border-b border-zinc-900" style="background:#0a0a0a">
                         <div id="templateStudioShell" class="template-studio-shell">
                             <div class="template-studio-head">
@@ -1250,8 +1285,18 @@
             <!-- Back / title bar -->
             <div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #18181b;background:#0a0a0a;flex-shrink:0">
                 <div style="flex:1;min-width:0">
-                    <p id="hdTitle" style="font-size:15px;font-weight:800;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+                    <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                        <p id="hdTitle" style="min-width:0;font-size:15px;font-weight:800;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+                        <button type="button" onclick="toggleHistoryJobUrlEditor(true)" title="Add or edit job URL" aria-label="Add or edit job URL" style="display:flex;align-items:center;justify-content:center;flex-shrink:0;width:26px;height:26px;border:1px solid rgba(148,163,184,.2);border-radius:7px;background:rgba(255,255,255,.04);color:#94a3b8;cursor:pointer">
+                            <svg style="width:13px;height:13px" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.687a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zM19.5 7.125L16.875 4.5M19.5 13.5v5.625A1.875 1.875 0 0117.625 21H5.375A1.875 1.875 0 013.5 19.125V6.875A1.875 1.875 0 015.375 5H11"/></svg>
+                        </button>
+                    </div>
                     <p id="hdSubtitle" style="font-size:11px;color:#94a3b8;margin-top:1px"></p>
+                    <div id="hdJobUrlEditor" style="display:none;align-items:center;gap:6px;margin-top:8px">
+                        <input id="hdJobUrlInput" type="url" class="field text-xs" placeholder="https://company.com/jobs/role" aria-label="Job URL" style="flex:1;min-width:0;padding:7px 10px">
+                        <button type="button" onclick="saveHistoryJobUrl()" class="btn-primary" style="font-size:11px;padding:7px 10px;flex-shrink:0">Save</button>
+                        <button type="button" onclick="toggleHistoryJobUrlEditor(false)" style="font-size:11px;padding:7px 9px;flex-shrink:0;border:1px solid rgba(148,163,184,.2);border-radius:8px;background:rgba(255,255,255,.04);color:#cbd5e1;cursor:pointer">Cancel</button>
+                    </div>
                 </div>
                 <button onclick="closeHistoryDetail()" style="font-size:12px;display:flex;align-items:center;gap:6px;padding:7px 14px;flex-shrink:0;border-radius:10px;border:1px solid rgba(59,130,246,.45);background:linear-gradient(135deg,rgba(37,99,235,.28),rgba(14,165,233,.18));color:#dbeafe;box-shadow:0 10px 24px rgba(37,99,235,.16);cursor:pointer">
                     <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -1526,7 +1571,7 @@
 
 <script>
 // ── State ──
-var currentTab='optimize',currentOutput='sec2',currentDocId=null,currentRole='',currentCompany='',currentJobUrl='',currentTemplate='classic',currentResumeMarkdown='',currentCoverLetterMarkdown='',currentLinkedInOutreach='',currentStarBank='',currentHumanToneMode='balanced',templateStudioCollapsed=true,loadingTermsTimer=null,isEditing=false,isCLEditing=false;
+var currentTab='optimize',currentOutput='sec2',currentDocId=null,currentRole='',currentCompany='',currentJobUrl='',currentTemplate='classic',currentResumeMarkdown='',currentCoverLetterMarkdown='',currentLinkedInOutreach='',currentStarBank='',currentHumanToneMode='balanced',currentFactuality=null,templateStudioCollapsed=true,loadingTermsTimer=null,isEditing=false,isCLEditing=false;
 var currentSettingsProvider='';
 var scannerListingsCache=[];
 var storedResumeInfo=null;
@@ -1544,6 +1589,9 @@ var TEMPLATES=[
     {id:'minimal',   name:'Minimal',    desc:'Whitespace-first',         cls:'tpl-minimal'},
     {id:'tech',      name:'Tech',       desc:'Monospace accents',        cls:'tpl-tech'},
     {id:'creative',  name:'Creative',   desc:'Expressive two-column',    cls:'tpl-creative'},
+    {id:'google',    name:'Google-Inspired',     desc:'Clean, keyword-forward ATS layout', cls:'tpl-google'},
+    {id:'microsoft', name:'Microsoft-Inspired',  desc:'Structured skills and impact layout', cls:'tpl-microsoft'},
+    {id:'apple',     name:'Apple-Inspired',      desc:'Minimal, typography-led ATS layout', cls:'tpl-apple'},
 ];
 
 var CL_TEMPLATES=[
@@ -2291,7 +2339,7 @@ var LS_THOUGHTS=[
     '→ Drafting cover letter content…',
     '→ Applying human tone calibration…',
     '→ Polishing final output…',
-    '→ Running final quality review…',
+    '→ Fact-checking resume claims against the source…',
 ];
 var LS_PHASES=[
     {icon:'🔍',name:'Analyzing JD & Resume',status:'Reading requirements…'},
@@ -2442,12 +2490,27 @@ document.getElementById('optimizeForm').addEventListener('submit',async function
     var jdVal=(document.getElementById('jd').value||'').trim();
     var resumeFile=document.getElementById('resumeFile').files[0];
 
-    if(!roleVal||!companyVal||!jdVal||!resumeFile){
-        toast('Please complete all fields before optimizing','error');
+    var requiredFields=[
+        {value:roleVal,label:'Job Role',element:document.getElementById('jobRole')},
+        {value:companyVal,label:'Company Name',element:document.getElementById('companyName')},
+        {value:jobUrlRaw,label:'Job URL',element:document.getElementById('jobUrl')},
+        {value:jdVal,label:'Job Description',element:document.getElementById('jd')},
+        {value:resumeFile,label:'Resume PDF',element:document.getElementById('resumeFile')}
+    ];
+    for(var i=0;i<requiredFields.length;i++){
+        if(!requiredFields[i].value){
+            toast(requiredFields[i].label+' is required','error');
+            if(requiredFields[i].label!=='Resume PDF')requiredFields[i].element.focus();
+            return;
+        }
+    }
+    if(!/\.pdf$/i.test(resumeFile.name||'')){
+        toast('Please upload a PDF file for Resume PDF','error');
         return;
     }
-    if(jobUrlRaw && !jobUrlVal){
+    if(!jobUrlVal){
         toast('Please enter a valid job URL','error');
+        document.getElementById('jobUrl').focus();
         return;
     }
 
@@ -2525,7 +2588,9 @@ function renderResults(data,options){
     currentCoverLetterMarkdown=data.cover_letter||'';
     currentLinkedInOutreach=data.linkedin_outreach||n.linkedin_outreach||'';
     currentStarBank=data.star_bank||n.star_bank||'';
-    currentTemplate=n.template||'classic';
+    currentTemplate=normalizeTemplateId(n.template,TEMPLATES);
+    currentFactuality=data.quality_checks&&data.quality_checks.factuality||null;
+    renderFactualityBanner(currentFactuality);
 
     document.getElementById('out-sec1').innerHTML='<div class="max-w-3xl mx-auto prose-dark">'+marked.parse(n.section1||'')+'</div>';
     document.getElementById('out-sec3').innerHTML='<div class="max-w-3xl mx-auto prose-dark">'+marked.parse(n.section3||'')+'</div>';
@@ -2745,6 +2810,7 @@ function buildOptimizationSessionPayload(data){
         star_bank:data.star_bank||n.star_bank||'',
         document_id:n.document_id,
         template:n.template||currentTemplate||'classic',
+        quality_checks:data.quality_checks||{},
         current_output:currentOutput||'sec2',
         current_cl_template:currentCLTemplate||'classic',
         human_tone:currentHumanToneMode||'balanced',
@@ -2759,6 +2825,54 @@ function buildOptimizationSessionPayload(data){
         jd:(document.getElementById('jd').value||''),
         file_label:(document.getElementById('dropLabel').textContent||'').trim()
     };
+}
+
+function renderFactualityBanner(factuality){
+    var banner=document.getElementById('factualityBanner');
+    if(!banner)return;
+    if(!factuality||!factuality.status){
+        banner.style.display='none';
+        banner.textContent='';
+        return;
+    }
+    var findings=Array.isArray(factuality.findings)?factuality.findings:[];
+    if(factuality.status==='clear'){
+        banner.style.cssText='display:block;margin:14px 24px 0;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.5;color:#bbf7d0;background:rgba(20,83,45,.25);border:1px solid rgba(74,222,128,.25)';
+        banner.textContent='AI-assisted fact-check did not flag unsupported resume claims. Please confirm all details against your original resume before submitting.';
+        return;
+    }
+    var isUnavailable=factuality.status==='review_required';
+    banner.style.cssText='display:block;margin:14px 24px 0;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.5;color:#fde68a;background:rgba(120,53,15,.22);border:1px solid rgba(251,191,36,.3)';
+    var heading=isUnavailable
+        ? 'Fact-check could not complete. Review the resume against your original before using it.'
+        : 'Fact-check flagged claims that still need your review:';
+    var details=findings.map(function(finding){
+        return '<li><strong>'+esc(finding.claim||'Claim')+'</strong>'
+            +(finding.reason?' — '+esc(finding.reason):'')+'</li>';
+    }).join('');
+    banner.innerHTML='<strong>'+esc(heading)+'</strong>'
+        +(details?'<ul style="margin:6px 0 0;padding-left:20px">'+details+'</ul>':'');
+}
+
+function markFactualityReviewRequired(editedResume){
+    if(!currentFactuality)return;
+    currentFactuality={
+        status:'review_required',
+        findings:[{
+            claim:'Resume content changed after the automated fact-check.',
+            reason:'Review the edited resume against the original source before submitting it.'
+        }]
+    };
+    renderFactualityBanner(currentFactuality);
+    try{
+        var saved=JSON.parse(sessionStorage.getItem(OPTIMIZATION_STATE_KEY)||'null');
+        if(saved){
+            saved.section2=editedResume;
+            saved.quality_checks=saved.quality_checks||{};
+            saved.quality_checks.factuality=currentFactuality;
+            saveOptimizationSessionState(saved);
+        }
+    }catch(_){}
 }
 
 function restoreOptimizationSessionState(){
@@ -2971,7 +3085,7 @@ function applyTemplate(tplId){
 function parseResumeHeaderContact(lines){
     var parts=[];
     lines.forEach(function(line){
-        String(line||'').split('|').forEach(function(seg){
+        String(line||'').split(/[|•·]/).forEach(function(seg){
             var v=seg.trim();
             if(v)parts.push(v);
         });
@@ -2980,20 +3094,25 @@ function parseResumeHeaderContact(lines){
     var out={phone:'',email:'',address:'',linkedin:''};
     parts.forEach(function(raw){
         var txt=raw.trim();
-        var low=txt.toLowerCase();
-        var clean=txt.replace(/^(phone|email|address|linkedin)\s*:\s*/i,'').trim();
+        var labelMatch=txt.match(/^(phone|mobile|email|e-mail|address|location|linkedin)\s*:\s*/i);
+        var label=labelMatch?labelMatch[1].toLowerCase():'';
+        var clean=txt.replace(/^(phone|mobile|email|e-mail|address|location|linkedin)\s*:\s*/i,'').trim();
         if(!clean)return;
 
-        if((low.indexOf('linkedin')>=0||low.indexOf('linkedin.com')>=0) && !out.linkedin){
-            out.linkedin=clean;
-            return;
-        }
-        if(low.indexOf('@')>=0 && !out.email){
+        if((label==='email'||label==='e-mail'||clean.indexOf('@')>=0) && !out.email){
             out.email=clean;
             return;
         }
-        if(/\+?\d[\d\s().-]{6,}\d/.test(clean) && !out.phone){
+        if((label==='phone'||label==='mobile'||/\+?\d[\d\s().-]{6,}\d/.test(clean)) && !out.phone){
             out.phone=clean;
+            return;
+        }
+        if((label==='linkedin'||/linkedin\.com|^www\./i.test(clean)) && !out.linkedin){
+            out.linkedin=clean;
+            return;
+        }
+        if(label==='address'||label==='location'){
+            out.address=out.address?(out.address+' '+clean).trim():clean;
             return;
         }
         if(!out.address){
@@ -3096,7 +3215,9 @@ function setEditMode(nextEditing){
 
 function toggleEdit(){
     if(isEditing){
-        currentResumeMarkdown=document.getElementById('resumeEditor').value;
+        var editedResume=document.getElementById('resumeEditor').value;
+        if(editedResume!==currentResumeMarkdown)markFactualityReviewRequired(editedResume);
+        currentResumeMarkdown=editedResume;
         setEditMode(false);
     } else {
         setEditMode(true);
@@ -3104,7 +3225,9 @@ function toggleEdit(){
 }
 
 async function saveEdit(){
-    currentResumeMarkdown=document.getElementById('resumeEditor').value;
+    var editedResume=document.getElementById('resumeEditor').value;
+    if(editedResume!==currentResumeMarkdown)markFactualityReviewRequired(editedResume);
+    currentResumeMarkdown=editedResume;
     if(currentDocId){
         var fd=new FormData(); fd.append('tailored_resume',currentResumeMarkdown);
         try{
@@ -3626,7 +3749,8 @@ function clearWorkspace(){
     stopLoadingTermsAnimation();
     setLoadingTermState(-1,0);
     document.getElementById('clearBtn').classList.add('hidden');
-    currentDocId=null; currentResumeMarkdown=''; currentCoverLetterMarkdown=''; currentLinkedInOutreach=''; currentStarBank=''; currentRole=''; currentCompany=''; currentJobUrl=''; isEditing=false; isCLEditing=false;
+    currentDocId=null; currentResumeMarkdown=''; currentCoverLetterMarkdown=''; currentLinkedInOutreach=''; currentStarBank=''; currentRole=''; currentCompany=''; currentJobUrl=''; currentFactuality=null; isEditing=false; isCLEditing=false;
+    renderFactualityBanner(null);
     currentCLTemplate='classic';
     clTemplateStudioCollapsed=true;
     setHumanToneMode('balanced');
@@ -3897,16 +4021,12 @@ function openHistoryDetail(id){
         document_id:item.document_id,template:item.template
     });
     var date=new Date(item.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-    var titleEl=document.getElementById('hdTitle');
-    var jobUrl=item.job_url||item.jobUrl;
-    if(jobUrl){
-        titleEl.innerHTML='<a href="'+esc(jobUrl)+'" target="_blank" rel="noopener noreferrer" style="color:#60a5fa">'+esc(n.role||'Unknown Role')+'</a>';
-    } else {
-        titleEl.textContent=n.role||'Unknown Role';
-    }
+    renderHistoryDetailTitle(n.role||'Unknown Role',item.job_url||item.jobUrl);
+    document.getElementById('hdJobUrlInput').value=item.job_url||item.jobUrl||'';
+    toggleHistoryJobUrlEditor(false);
     document.getElementById('hdSubtitle').textContent=(n.company||'Unknown Company')+' \u00b7 '+date;
     document.getElementById('hd-sec1-content').innerHTML=marked.parse(n.section1||'');
-    currentHistoryDetailTpl=n.template||'classic';
+    currentHistoryDetailTpl=normalizeTemplateId(n.template,TEMPLATES);
     var rp=document.getElementById('hdResumePaper');
     rp.innerHTML=marked.parse(n.section2||'');
     rp.setAttribute('data-md', n.section2||'');
@@ -3941,6 +4061,55 @@ function openHistoryDetail(id){
     document.getElementById('historyListView').style.display='none';
     document.getElementById('historyDetailView').style.display='flex';
     switchHistoryDetailTab('sec2');
+}
+
+function renderHistoryDetailTitle(role,jobUrl){
+    var titleEl=document.getElementById('hdTitle');
+    if(jobUrl){
+        titleEl.innerHTML='<a href="'+esc(jobUrl)+'" target="_blank" rel="noopener noreferrer" style="color:#60a5fa">'+esc(role)+'</a>';
+    } else {
+        titleEl.textContent=role;
+    }
+}
+
+function toggleHistoryJobUrlEditor(show){
+    var editor=document.getElementById('hdJobUrlEditor');
+    if(!editor)return;
+    editor.style.display=show?'flex':'none';
+    if(show){
+        var item=historyItemsCache.find(function(it){return it.id===currentHistoryDetailId;});
+        document.getElementById('hdJobUrlInput').value=item?(item.job_url||item.jobUrl||''):'';
+        document.getElementById('hdJobUrlInput').focus();
+    }
+}
+
+async function saveHistoryJobUrl(){
+    var input=document.getElementById('hdJobUrlInput');
+    var raw=(input.value||'').trim();
+    var jobUrl=normalizeJobUrl(raw);
+    if(raw&&!jobUrl){
+        toast('Enter a valid job URL','error');
+        input.focus();
+        return;
+    }
+    var item=historyItemsCache.find(function(it){return it.id===currentHistoryDetailId;});
+    if(!item)return;
+    var fd=new FormData();
+    fd.append('job_url',jobUrl);
+    try{
+        var res=await fetch('http://localhost:8000/history/'+currentHistoryDetailId+'/job-url',{method:'PATCH',headers:ah(),body:fd});
+        if(!res.ok){
+            var err=await res.json().catch(function(){return {};});
+            throw new Error(err.detail||'Failed to save job URL');
+        }
+        item.job_url=jobUrl;
+        renderHistoryDetailTitle(item.role||'Unknown Role',jobUrl);
+        toggleHistoryJobUrlEditor(false);
+        applyHistoryFilters();
+        toast('Job URL saved','success');
+    }catch(ex){
+        toast('Failed to save job URL: '+ex.message,'error');
+    }
 }
 
 function closeHistoryDetail(){
@@ -4007,6 +4176,7 @@ function buildHdCLTemplateStrip(activeTplId){
 }
 
 function switchHistoryDetailTemplate(tplId){
+    tplId=normalizeTemplateId(tplId,TEMPLATES);
     currentHistoryDetailTpl=tplId;
     var rp=document.getElementById('hdResumePaper');
     if(rp) rp.className='resume-paper tpl-'+tplId+' w-full max-w-3xl mx-auto';
