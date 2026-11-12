@@ -215,7 +215,7 @@ Go to the **Settings** tab and fill in your AI provider details (see above). Cli
 
 1. Open the **Resume Optimizer** tab.
 2. Fill in **Job Role**, **Company Name**, **Job URL**, and **Job Description**.
-3. Upload a text-readable **Resume PDF**, or open **Previously uploaded** to preview and select one from the dated resume-library modal. New uploads are saved to your account and can be previewed or reused later. Pasted Markdown is not accepted by the optimizer form, and image-only/scanned PDFs may need OCR before upload.
+3. Upload a text-readable **Resume PDF**, or open **Previously uploaded** to use the resume-library modal. The list is newest first; click **View** to preview a PDF in the modal, then **Select** to attach it to the optimization. New uploads are saved to your account for later reuse. Pasted Markdown is not accepted by the optimizer form, and image-only/scanned PDFs may need OCR before upload.
 4. Choose the human-tone setting if desired, then click **Optimize My Resume**.
 5. Keep the page open while optimization runs. When complete, the results are displayed and the app may send a browser notification if permission is granted.
 
