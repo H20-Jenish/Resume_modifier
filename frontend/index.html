@@ -412,6 +412,31 @@
         .template-modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
         .template-modal-actions .btn-ghost{padding:8px 12px;font-size:12px}
         .template-modal-actions .btn-primary{padding:8px 14px;font-size:12px}
+        .resume-library-box{width:100%;max-width:1040px;height:min(88vh,820px);display:flex;flex-direction:column;padding:24px}
+        .resume-library-content{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:14px;flex:1;min-height:0}
+        .resume-library-list{min-height:0;overflow-y:auto;border:1px solid #252b36;border-radius:12px;background:#0b0e14;padding:8px}
+        .resume-library-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid transparent;border-radius:10px;transition:background .15s,border-color .15s}
+        .resume-library-item+.resume-library-item{margin-top:5px}
+        .resume-library-item:hover,.resume-library-item.is-previewing{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35)}
+        .resume-library-item.is-selected{border-color:rgba(59,130,246,.55)}
+        .resume-library-item-info{min-width:0}
+        .resume-library-item-name{font-size:12px;font-weight:700;color:#e4e4e7;overflow-wrap:anywhere}
+        .resume-library-item-date{font-size:10px;color:#71717a;margin-top:4px}
+        .resume-library-item-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+        .resume-library-item-actions .btn-ghost,.resume-library-item-actions .btn-primary{padding:6px 10px;font-size:11px;border-radius:8px}
+        .resume-library-preview{min-width:0;min-height:0;overflow:hidden;border:1px solid #252b36;border-radius:12px;background:#0b0e14}
+        .resume-library-preview-frame{display:block;width:100%;height:100%;min-height:300px;border:0;background:#111}
+        .resume-library-preview-placeholder{display:flex;align-items:center;justify-content:center;text-align:center;height:100%;min-height:200px;padding:20px;color:#71717a;font-size:12px}
+        .resume-library-empty{padding:24px;text-align:center;color:#a1a1aa;font-size:12px}
+        @media(max-width:720px){
+            .resume-library-box{height:94vh;padding:16px}
+            .resume-library-content{display:flex;flex-direction:column}
+            .resume-library-list{max-height:32vh;flex:none}
+            .resume-library-preview{min-height:0;flex:1}
+            .resume-library-preview-frame{min-height:180px}
+            .resume-library-item{align-items:flex-start;flex-direction:column}
+            .resume-library-item-actions{width:100%;justify-content:flex-end}
+        }
         #templateButtonsContainer{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
         #templateButtonsContainer .template-button{padding:8px 14px;min-width:auto;border-radius:999px;font-size:12px}
         .template-preview-shell{background:#e8edf5;border-radius:10px;padding:0;overflow:auto;height:100%}
@@ -493,7 +518,7 @@
                     Optimized Resumes
                 </span>
             </button>
-            <button onclick="switchTab('scanner')" id="navTab-scanner" class="nav-tab">
+            <button onclick="switchTab('scanner')" id="navTab-scanner" class="nav-tab" style="display:none">
                 <span class="flex items-center gap-1.5 text-xs">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
                     Job Scanner
@@ -516,6 +541,13 @@
                     <img src="admin_icon.svg" alt="Admin profile" class="w-7 h-7 rounded-full object-cover" />
                 </button>
                 <div id="profileMenu" class="hidden absolute right-0 mt-2 w-52 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50">
+                    <div id="jobScannerSettingRow" class="hidden border-b border-zinc-800 px-4 py-3">
+                        <label class="flex items-center justify-between gap-3 text-xs font-semibold text-zinc-300 cursor-pointer">
+                            <span>Disable Job Scanner</span>
+                            <input id="jobScannerDisabled" type="checkbox" class="accent-blue-500" onchange="saveJobScannerSetting()">
+                        </label>
+                        <p id="jobScannerSettingHelp" class="mt-2 text-[10px] leading-relaxed text-zinc-500">Controls scanner access in the app only. Start Docker services with: docker compose --profile job-scanner up -d n8n crawl4ai. Stop them with: docker compose stop n8n crawl4ai.</p>
+                    </div>
                     <button onclick="openBackupModal()" class="w-full flex items-center justify-start text-left gap-2.5 px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors border-b border-zinc-800">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16m-7 5h7M7 5v14m10-8v8"/></svg>
                         Backup &amp; Export
@@ -615,11 +647,21 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider block">Resume PDF</label>
-                        <div id="dropZone" class="drop-zone" onclick="document.getElementById('resumeFile').click()">
-                            <svg class="w-6 h-6 text-zinc-700 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
-                            <p id="dropLabel" class="text-xs text-zinc-600 font-medium">Click or drag to upload PDF</p>
+                        <div class="grid grid-cols-2 gap-1 mb-2">
+                            <button type="button" id="resumeSourceUpload" class="btn-ghost text-xs py-2" onclick="setResumeSource('upload')">Upload new</button>
+                            <button type="button" id="resumeSourceLibrary" class="btn-ghost text-xs py-2" onclick="setResumeSource('library')">Previously uploaded</button>
                         </div>
-                        <input id="resumeFile" type="file" accept=".pdf" class="hidden" required>
+                        <div id="resumeUploadPanel">
+                            <div id="dropZone" class="drop-zone" onclick="document.getElementById('resumeFile').click()">
+                                <svg class="w-6 h-6 text-zinc-700 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                                <p id="dropLabel" class="text-xs text-zinc-600 font-medium">Click or drag to upload PDF</p>
+                            </div>
+                            <input id="resumeFile" type="file" accept=".pdf" class="hidden">
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mt-2">
+                            <p id="resumeSelectionStatus" class="text-xs text-zinc-500 min-w-0 truncate" aria-live="polite">No resume selected</p>
+                            <button type="button" id="viewSelectedResume" class="btn-ghost text-xs px-2.5 py-1.5" onclick="viewSelectedResume()" disabled>View</button>
+                        </div>
                     </div>
                     <button type="submit" id="optimizeBtn" class="btn-primary w-full flex items-center justify-center gap-2 py-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -1432,6 +1474,33 @@
     </div>
 </div>
 
+<!-- RESUME LIBRARY MODAL -->
+<div id="resumeLibraryModal" class="hidden modal-backdrop" style="z-index:140" onclick="if(event.target===this)closeResumeLibraryModal()">
+    <div class="modal-box resume-library-box" role="dialog" aria-modal="true" aria-labelledby="resumeLibraryTitle">
+        <div class="flex items-start justify-between gap-4 mb-4 pb-4 border-b border-zinc-800">
+            <div>
+                <h3 id="resumeLibraryTitle" class="text-lg font-black text-white">Previously Uploaded Resumes</h3>
+                <p class="text-xs text-zinc-500 mt-1">Preview a resume, then select the one to attach to this optimization.</p>
+            </div>
+            <button type="button" id="resumeLibraryCloseBtn" onclick="closeResumeLibraryModal()" class="btn-ghost text-xs px-3 py-2" aria-label="Close resume library">Close</button>
+        </div>
+        <div class="resume-library-content">
+            <div id="resumeLibraryList" class="resume-library-list" role="list" aria-label="Uploaded resumes"></div>
+            <div class="resume-library-preview">
+                <div id="resumeLibraryPreviewPlaceholder" class="resume-library-preview-placeholder">Choose a resume and select View to preview it here.</div>
+                <iframe id="resumeLibraryPreviewFrame" class="resume-library-preview-frame hidden" title="Resume PDF preview"></iframe>
+            </div>
+        </div>
+        <div class="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-zinc-800">
+            <p id="resumeLibraryModalStatus" class="text-xs text-zinc-500 min-w-0 truncate" aria-live="polite">Your uploaded resumes are listed by date.</p>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <button type="button" onclick="closeResumeLibraryModal();setResumeSource('upload')" class="btn-ghost text-xs px-3 py-2">Upload New</button>
+                <button type="button" onclick="closeResumeLibraryModal()" class="btn-primary text-xs px-3 py-2">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div id="settingsModal" class="hidden modal-backdrop" onclick="if(event.target===this)closeSettings()">
     <div class="modal-box p-8" style="max-height:90vh;overflow-y:auto">
@@ -1573,8 +1642,23 @@
 // ── State ──
 var currentTab='optimize',currentOutput='sec2',currentDocId=null,currentRole='',currentCompany='',currentJobUrl='',currentTemplate='classic',currentResumeMarkdown='',currentCoverLetterMarkdown='',currentLinkedInOutreach='',currentStarBank='',currentHumanToneMode='balanced',currentFactuality=null,templateStudioCollapsed=true,loadingTermsTimer=null,isEditing=false,isCLEditing=false;
 var currentSettingsProvider='';
+var jobScannerEnabled=false;
+var canManageJobScanner=false;
+var jobScannerSettingLoaded=false;
+var jobScannerSettingTimer=null;
 var scannerListingsCache=[];
 var storedResumeInfo=null;
+var resumeSourceMode='upload';
+var selectedResumeId=null;
+var uploadedResumeId=null;
+var libraryResumeId=null;
+var resumeLibraryItems=[];
+var resumePreviewObjectUrl=null;
+var resumePreviewRequest=0;
+var resumePreviewingId=null;
+var resumeLibraryOpener=null;
+var resumeUploadPromise=null;
+var resumeUploadPending=false;
 var _lsCurrentScene=0,_lsSceneTimer=null,_lsThoughtTimer=null,_lsTipTimer=null,_lsPhaseTimer=null,_lsThoughtIndex=0,_lsTipIndex=0,_lsPhaseIndex=0;
 var historyItemsCache=[];
 var backupTimer=null;
@@ -1717,6 +1801,10 @@ function logout(){
     document.getElementById('appView').classList.add('hidden');
     document.getElementById('loginView').classList.remove('hidden');
     document.getElementById('profileMenu').classList.add('hidden');
+    if(jobScannerSettingTimer){
+        clearInterval(jobScannerSettingTimer);
+        jobScannerSettingTimer=null;
+    }
 }
 async function toggleProfileMenu(){
     var menu=document.getElementById('profileMenu');
@@ -1726,6 +1814,65 @@ async function toggleProfileMenu(){
     }
     menu.classList.toggle('hidden');
 }
+
+function applyJobScannerSetting(enabled,canManage){
+    jobScannerEnabled=!!enabled;
+    canManageJobScanner=!!canManage;
+    jobScannerSettingLoaded=true;
+    var nav=document.getElementById('navTab-scanner');
+    var settingRow=document.getElementById('jobScannerSettingRow');
+    var disabledInput=document.getElementById('jobScannerDisabled');
+    if(nav)nav.style.display=jobScannerEnabled?'':'none';
+    if(settingRow)settingRow.classList.toggle('hidden',!canManageJobScanner);
+    if(disabledInput)disabledInput.checked=!jobScannerEnabled;
+    if(!jobScannerEnabled&&localStorage.getItem('activeTab')==='scanner')localStorage.setItem('activeTab','optimize');
+    if(!jobScannerEnabled&&currentTab==='scanner')switchTab('optimize');
+    if(jobScannerEnabled&&localStorage.getItem('activeTab')==='scanner'&&currentTab!=='scanner')switchTab('scanner');
+}
+
+async function loadJobScannerSetting(showError){
+    try{
+        var res=await fetch('http://localhost:8000/settings/job-scanner',{headers:ah()});
+        if(res.status===401){logout();return;}
+        if(!res.ok)throw new Error('Failed to load the global Job Scanner setting');
+        var setting=await res.json();
+        applyJobScannerSetting(setting.enabled,setting.can_manage);
+    }catch(ex){
+        applyJobScannerSetting(false,false);
+        if(showError!==false)toast(ex.message||'Unable to load Job Scanner setting','error');
+    }
+}
+
+async function saveJobScannerSetting(){
+    var input=document.getElementById('jobScannerDisabled');
+    if(!input||!canManageJobScanner)return;
+    input.disabled=true;
+    try{
+        var res=await fetch('http://localhost:8000/settings/job-scanner',{
+            method:'PUT',
+            headers:Object.assign({'Content-Type':'application/json'},ah()),
+            body:JSON.stringify({enabled:!input.checked})
+        });
+        if(res.status===401){logout();return;}
+        if(!res.ok){
+            var error=await res.json();
+            throw new Error(error.detail||'Failed to save Job Scanner setting');
+        }
+        var setting=await res.json();
+        applyJobScannerSetting(setting.enabled,true);
+        if(setting.enabled){
+            toast('Job Scanner enabled for all users. Start its services with: docker compose --profile job-scanner up -d n8n crawl4ai','info',12000);
+        }else{
+            toast('Job Scanner disabled for all users. Stop its services with: docker compose stop n8n crawl4ai','info',10000);
+        }
+    }catch(ex){
+        input.checked=!jobScannerEnabled;
+        toast(ex.message||'Unable to save Job Scanner setting','error');
+    }finally{
+        input.disabled=false;
+    }
+}
+
 document.addEventListener('click',function(e){
     if(!e.target.closest('.relative'))document.getElementById('profileMenu').classList.add('hidden');
     if(!e.target.closest('.template-picker-menu') && !e.target.closest('[onclick*="toggleHistoryTemplateMenu"]')){
@@ -1773,6 +1920,8 @@ function initApp(){
     updateHistoryBadge();
     loadTemperaturePrefs();
     renderTemperatureUI();
+    loadJobScannerSetting();
+    if(!jobScannerSettingTimer)jobScannerSettingTimer=setInterval(function(){loadJobScannerSetting(false);},15000);
     initBackupScheduler();
     restoreOptimizationSessionState();
 }
@@ -1826,6 +1975,11 @@ window.addEventListener('DOMContentLoaded',function(){
 
 // ── Tabs ──
 function switchTab(tab){
+    if(tab==='scanner'&&!jobScannerSettingLoaded)return;
+    if(tab==='scanner'&&jobScannerSettingLoaded&&!jobScannerEnabled){
+        toast('The Job Scanner is disabled by the administrator','error');
+        tab='optimize';
+    }
     currentTab=tab;
     localStorage.setItem('activeTab',tab);
     var vOpt=document.getElementById('view-optimize');
@@ -2160,11 +2314,299 @@ function setupDropZone(){
     zone.addEventListener('dragleave',function(){zone.classList.remove('dragging');});
     zone.addEventListener('drop',function(e){
         e.preventDefault();zone.classList.remove('dragging');
-        if(e.dataTransfer.files[0]){input.files=e.dataTransfer.files;updateDropLabel(e.dataTransfer.files[0].name);}
+        if(e.dataTransfer.files[0]){input.files=e.dataTransfer.files;updateDropLabel(e.dataTransfer.files[0].name);saveOptimizerResume(e.dataTransfer.files[0]);}
     });
-    input.addEventListener('change',function(e){if(e.target.files[0])updateDropLabel(e.target.files[0].name);});
+    input.addEventListener('change',function(e){if(e.target.files[0]){updateDropLabel(e.target.files[0].name);saveOptimizerResume(e.target.files[0]);}});
+    setResumeSource('upload');
 }
 function updateDropLabel(name){document.getElementById('dropLabel').innerHTML='<span style="color:#60a5fa;font-weight:600">'+esc(name)+'</span>';}
+
+function setResumeSource(mode){
+    if(resumeUploadPending)return;
+    if(mode==='library'){
+        openResumeLibraryModal(libraryResumeId);
+        return;
+    }
+    resumeSourceMode='upload';
+    selectedResumeId=uploadedResumeId;
+    document.getElementById('resumeUploadPanel').classList.remove('hidden');
+    updateResumeSourceButtons();
+    updateResumeSelectionStatus();
+}
+
+function updateResumeSourceButtons(){
+    document.getElementById('resumeSourceUpload').className=(resumeSourceMode==='upload'?'btn-primary':'btn-ghost')+' text-xs py-2';
+    document.getElementById('resumeSourceLibrary').className=(resumeSourceMode==='library'?'btn-primary':'btn-ghost')+' text-xs py-2';
+}
+
+function updateResumeSelectionStatus(filename){
+    var status=document.getElementById('resumeSelectionStatus');
+    var viewButton=document.getElementById('viewSelectedResume');
+    if(!status||!viewButton)return;
+    var selected=!!selectedResumeId;
+    if(filename)status.textContent=filename;
+    else if(selected&&resumeSourceMode==='upload'){
+        var input=document.getElementById('resumeFile');
+        status.textContent=input.files[0]?input.files[0].name:'Uploaded resume selected';
+    }else if(selected&&resumeSourceMode==='library'){
+        var selectedItem=resumeLibraryItems.find(function(item){return Number(item.id)===Number(selectedResumeId);});
+        status.textContent=selectedItem?selectedItem.filename:'Saved resume selected';
+    }else if(resumeUploadPending){
+        status.textContent='Saving resume to your library...';
+    }else{
+        status.textContent='No resume selected';
+    }
+    viewButton.disabled=!selected;
+}
+
+async function saveOptimizerResume(file){
+    if(!file||resumeUploadPending)return;
+    uploadedResumeId=null;
+    selectedResumeId=null;
+    if(!/\.pdf$/i.test(file.name||'')){
+        updateResumeSelectionStatus('Please choose a PDF file.');
+        toast('Please upload a PDF file for Resume PDF','error');
+        return;
+    }
+    if(file.size>20*1024*1024){
+        updateResumeSelectionStatus('Resume PDF must be 20 MB or smaller.');
+        toast('Resume PDF must be 20 MB or smaller.','error');
+        return;
+    }
+    resumeUploadPending=true;
+    document.getElementById('optimizeBtn').disabled=true;
+    document.getElementById('resumeSourceUpload').disabled=true;
+    document.getElementById('resumeSourceLibrary').disabled=true;
+    document.getElementById('resumeFile').disabled=true;
+    document.getElementById('dropZone').style.pointerEvents='none';
+    updateResumeSelectionStatus();
+    var formData=new FormData();
+    formData.append('resume',file);
+    resumeUploadPromise=(async function(){
+        try{
+            var response=await fetch('http://localhost:8000/resume/uploads',{method:'POST',headers:ah(),body:formData});
+            if(response.status===401){logout();return;}
+            if(!response.ok){
+                var error={};
+                try{error=await response.json();}catch(ex){}
+                throw new Error(error.detail||'Could not save this resume.');
+            }
+            var uploaded=await response.json();
+            uploadedResumeId=uploaded.id;
+            selectedResumeId=resumeSourceMode==='upload'?uploaded.id:selectedResumeId;
+            libraryResumeId=uploaded.id;
+            updateResumeSelectionStatus(uploaded.filename);
+            if(resumeSourceMode==='upload')toast('Resume saved to your library','success');
+            try{
+                await refreshResumeLibrary(uploaded.id);
+            }catch(refreshError){
+                toast('Resume saved, but the library could not refresh: '+refreshError.message,'error');
+            }
+        }catch(ex){
+            uploadedResumeId=null;
+            selectedResumeId=null;
+            updateResumeSelectionStatus('Resume could not be saved.');
+            toast(ex.message||'Could not save this resume.','error');
+        }finally{
+            resumeUploadPending=false;
+            resumeUploadPromise=null;
+            document.getElementById('optimizeBtn').disabled=false;
+            document.getElementById('resumeSourceUpload').disabled=false;
+            document.getElementById('resumeSourceLibrary').disabled=false;
+            document.getElementById('resumeFile').disabled=false;
+            document.getElementById('dropZone').style.pointerEvents='';
+            updateResumeSelectionStatus();
+        }
+    })();
+    await resumeUploadPromise;
+}
+
+async function refreshResumeLibrary(preferredId){
+    var response=await fetch('http://localhost:8000/resume/uploads',{headers:ah()});
+    if(response.status===401){logout();closeResumeLibraryModal();return [];}
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    var data=await response.json();
+    resumeLibraryItems=data.resumes||[];
+    renderResumeLibraryList(preferredId);
+    updateResumeSelectionStatus();
+    return resumeLibraryItems;
+}
+
+function renderResumeLibraryList(previewId){
+    var list=document.getElementById('resumeLibraryList');
+    list.innerHTML='';
+    if(!resumeLibraryItems.length){
+        var empty=document.createElement('div');
+        empty.className='resume-library-empty';
+        empty.textContent='No resumes have been uploaded yet.';
+        var uploadButton=document.createElement('button');
+        uploadButton.type='button';
+        uploadButton.className='btn-primary text-xs mt-3';
+        uploadButton.textContent='Upload a Resume';
+        uploadButton.addEventListener('click',function(){
+            closeResumeLibraryModal();
+            setResumeSource('upload');
+        });
+        empty.appendChild(document.createElement('br'));
+        empty.appendChild(uploadButton);
+        list.appendChild(empty);
+        return;
+    }
+
+    resumeLibraryItems.forEach(function(item){
+        var id=Number(item.id);
+        var row=document.createElement('div');
+        row.className='resume-library-item';
+        row.setAttribute('role','listitem');
+        if(id===Number(selectedResumeId))row.classList.add('is-selected');
+        if(id===Number(resumePreviewingId||previewId))row.classList.add('is-previewing');
+
+        var info=document.createElement('div');
+        info.className='resume-library-item-info';
+        var name=document.createElement('div');
+        name.className='resume-library-item-name';
+        name.textContent=item.filename||'Resume PDF';
+        var date=document.createElement('div');
+        date.className='resume-library-item-date';
+        var uploadedAt=new Date(item.created_at);
+        date.textContent=isNaN(uploadedAt.getTime())?'Upload date unavailable':'Uploaded '+uploadedAt.toLocaleString();
+        info.appendChild(name);
+        info.appendChild(date);
+
+        var actions=document.createElement('div');
+        actions.className='resume-library-item-actions';
+        var viewButton=document.createElement('button');
+        viewButton.type='button';
+        viewButton.className='btn-ghost';
+        viewButton.textContent='View';
+        viewButton.setAttribute('aria-label','View '+(item.filename||'resume'));
+        viewButton.addEventListener('click',function(){previewResumeInModal(id);});
+        var selectButton=document.createElement('button');
+        selectButton.type='button';
+        selectButton.className='btn-primary';
+        selectButton.textContent=id===Number(selectedResumeId)?'Selected':'Select';
+        selectButton.disabled=id===Number(selectedResumeId);
+        selectButton.setAttribute('aria-label','Select '+(item.filename||'resume'));
+        selectButton.addEventListener('click',function(){selectResumeFromLibrary(id);});
+        actions.appendChild(viewButton);
+        actions.appendChild(selectButton);
+        row.appendChild(info);
+        row.appendChild(actions);
+        list.appendChild(row);
+    });
+}
+
+async function openResumeLibraryModal(previewId){
+    if(resumeUploadPending)return;
+    resumeLibraryOpener=document.activeElement;
+    var modal=document.getElementById('resumeLibraryModal');
+    modal.classList.remove('hidden');
+    document.getElementById('resumeSourceUpload').className='btn-ghost text-xs py-2';
+    document.getElementById('resumeSourceLibrary').className='btn-primary text-xs py-2';
+    document.getElementById('resumeLibraryList').textContent='Loading your uploaded resumes...';
+    document.getElementById('resumeLibraryModalStatus').textContent='Loading your uploaded resumes...';
+    document.getElementById('resumeLibraryCloseBtn').focus();
+    try{
+        var resumes=await refreshResumeLibrary(previewId);
+        if(modal.classList.contains('hidden'))return;
+        if(previewId&&resumes.some(function(item){return Number(item.id)===Number(previewId);})){
+            await previewResumeInModal(previewId);
+        }else if(resumes.length){
+            document.getElementById('resumeLibraryModalStatus').textContent='Preview a resume or select one to attach it.';
+        }else{
+            document.getElementById('resumeLibraryModalStatus').textContent='Upload a resume to build your library.';
+        }
+    }catch(ex){
+        document.getElementById('resumeLibraryList').textContent='Could not load your uploaded resumes.';
+        document.getElementById('resumeLibraryModalStatus').textContent='Resume library could not be loaded.';
+        toast('Could not load uploaded resumes: '+ex.message,'error');
+    }
+}
+
+function clearResumeLibraryPreview(){
+    resumePreviewRequest++;
+    resumePreviewingId=null;
+    if(resumePreviewObjectUrl){
+        URL.revokeObjectURL(resumePreviewObjectUrl);
+        resumePreviewObjectUrl=null;
+    }
+    var frame=document.getElementById('resumeLibraryPreviewFrame');
+    frame.src='about:blank';
+    frame.classList.add('hidden');
+    var placeholder=document.getElementById('resumeLibraryPreviewPlaceholder');
+    placeholder.textContent='Choose a resume and select View to preview it here.';
+    placeholder.classList.remove('hidden');
+}
+
+async function previewResumeInModal(resumeId){
+    var id=Number(resumeId);
+    var item=resumeLibraryItems.find(function(resume){return Number(resume.id)===id;});
+    if(!item)return;
+    clearResumeLibraryPreview();
+    var requestId=resumePreviewRequest;
+    resumePreviewingId=id;
+    var placeholder=document.getElementById('resumeLibraryPreviewPlaceholder');
+    var frame=document.getElementById('resumeLibraryPreviewFrame');
+    var status=document.getElementById('resumeLibraryModalStatus');
+    placeholder.textContent='Loading '+(item.filename||'resume')+'...';
+    status.textContent='Loading preview...';
+    renderResumeLibraryList(id);
+    try{
+        var response=await fetch('http://localhost:8000/resume/uploads/'+encodeURIComponent(id)+'/file',{headers:ah()});
+        if(response.status===401){closeResumeLibraryModal();logout();return;}
+        if(!response.ok)throw new Error('Could not open this resume (HTTP '+response.status+').');
+        var objectUrl=URL.createObjectURL(await response.blob());
+        if(requestId!==resumePreviewRequest){URL.revokeObjectURL(objectUrl);return;}
+        resumePreviewObjectUrl=objectUrl;
+        frame.src=objectUrl;
+        frame.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        status.textContent=item.filename||'Resume preview';
+    }catch(ex){
+        if(requestId!==resumePreviewRequest)return;
+        placeholder.textContent='Resume preview could not be loaded.';
+        status.textContent='Preview failed.';
+        toast(ex.message||'Could not open this resume.','error');
+    }
+}
+
+function selectResumeFromLibrary(resumeId){
+    var id=Number(resumeId);
+    var item=resumeLibraryItems.find(function(resume){return Number(resume.id)===id;});
+    if(!item){
+        toast('Selected resume is no longer available. Refresh the library and try again.','error');
+        return;
+    }
+    libraryResumeId=id;
+    selectedResumeId=id;
+    resumeSourceMode='library';
+    document.getElementById('resumeUploadPanel').classList.add('hidden');
+    updateResumeSourceButtons();
+    updateResumeSelectionStatus(item.filename||'Resume PDF');
+    closeResumeLibraryModal();
+    toast('Resume selected for optimization','success');
+}
+
+function closeResumeLibraryModal(){
+    var modal=document.getElementById('resumeLibraryModal');
+    if(modal.classList.contains('hidden'))return;
+    modal.classList.add('hidden');
+    clearResumeLibraryPreview();
+    updateResumeSourceButtons();
+    if(resumeLibraryOpener&&resumeLibraryOpener.isConnected)resumeLibraryOpener.focus();
+    resumeLibraryOpener=null;
+}
+
+function viewSelectedResume(){
+    if(!selectedResumeId)return;
+    openResumeLibraryModal(selectedResumeId);
+}
+
+document.addEventListener('keydown',function(event){
+    if(event.key==='Escape'&&!document.getElementById('resumeLibraryModal').classList.contains('hidden')){
+        closeResumeLibraryModal();
+    }
+});
 
 function setHumanToneMode(mode){
     currentHumanToneMode=mode||'balanced';
@@ -2482,20 +2924,20 @@ function setOptimizationFormBusy(isBusy){
 // ── Optimize ──
 document.getElementById('optimizeForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    if(resumeUploadPending&&resumeUploadPromise)await resumeUploadPromise;
     var roleVal=(document.getElementById('jobRole').value||'').trim();
     var companyVal=(document.getElementById('companyName').value||'').trim();
     var jobUrlRaw=(document.getElementById('jobUrl').value||'').trim();
     var jobUrlVal=normalizeJobUrl(jobUrlRaw);
     var humanToneVal=(document.getElementById('humanTone').value||'balanced').trim();
     var jdVal=(document.getElementById('jd').value||'').trim();
-    var resumeFile=document.getElementById('resumeFile').files[0];
 
     var requiredFields=[
         {value:roleVal,label:'Job Role',element:document.getElementById('jobRole')},
         {value:companyVal,label:'Company Name',element:document.getElementById('companyName')},
         {value:jobUrlRaw,label:'Job URL',element:document.getElementById('jobUrl')},
         {value:jdVal,label:'Job Description',element:document.getElementById('jd')},
-        {value:resumeFile,label:'Resume PDF',element:document.getElementById('resumeFile')}
+        {value:selectedResumeId,label:'Resume PDF',element:document.getElementById('resumeFile')}
     ];
     for(var i=0;i<requiredFields.length;i++){
         if(!requiredFields[i].value){
@@ -2503,10 +2945,6 @@ document.getElementById('optimizeForm').addEventListener('submit',async function
             if(requiredFields[i].label!=='Resume PDF')requiredFields[i].element.focus();
             return;
         }
-    }
-    if(!/\.pdf$/i.test(resumeFile.name||'')){
-        toast('Please upload a PDF file for Resume PDF','error');
-        return;
     }
     if(!jobUrlVal){
         toast('Please enter a valid job URL','error');
@@ -2539,7 +2977,7 @@ document.getElementById('optimizeForm').addEventListener('submit',async function
 
     var fd=new FormData();
     fd.append('jd',jdVal);
-    fd.append('resume',resumeFile);
+    fd.append('resume_id',String(selectedResumeId));
     fd.append('job_role',roleVal);
     fd.append('company_name',companyVal);
     fd.append('job_url',jobUrlVal);
@@ -6224,7 +6662,7 @@ function optimizeFromListing(id){
     switchTab('optimize');
 
     var resumeInput=document.getElementById('resumeFile');
-    var hasResume=resumeInput && resumeInput.files && resumeInput.files.length>0;
+    var hasResume=!!selectedResumeId || (resumeInput && resumeInput.files && resumeInput.files.length>0);
     if(hasResume){
         setTimeout(function(){
             var form=document.getElementById('optimizeForm');

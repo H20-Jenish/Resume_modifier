@@ -65,7 +65,9 @@ services:
   n8n:
     container_name: resume_modifier_n8n
     image: n8nio/n8n:latest
-    restart: always
+    restart: "no"
+    profiles:
+      - job-scanner
     ports:
       - "127.0.0.1:${N8N_HOST_PORT:-15678}:5678"
     environment:
@@ -92,7 +94,9 @@ services:
   crawl4ai:
     container_name: resume_modifier_crawl4ai
     image: unclecode/crawl4ai:latest
-    restart: always
+    restart: "no"
+    profiles:
+      - job-scanner
     ports:
       - "127.0.0.1:${CRAWL4AI_PORT:-21235}:11235"
     environment:

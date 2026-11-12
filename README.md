@@ -9,7 +9,7 @@ Resume Modifier is a Dockerized web app for tailoring a resume and cover letter 
 - Stores optimization history per user account.
 - Renders downloadable PDFs using nine resume templates and four cover-letter templates. Google-, Microsoft-, and Apple-inspired options are original designs, not official company templates.
 - Checks tailored resume claims against the source resume, attempts to correct unsupported claims, and flags anything that still needs review.
-- Includes saved resumes, backup/restore helpers, and optional job-scanning integrations using n8n and crawl4ai.
+- Saves uploaded source PDFs in a per-user resume library so they can be previewed and reused for future optimizations; also includes the separate stored profile resume used by Job Scanner, backup/restore helpers, and optional job-scanning integrations using n8n and crawl4ai.
 
 The automated fact check is a best-effort AI review, not a guarantee. Review the final resume against the original source before submitting it.
 
@@ -23,7 +23,7 @@ The automated fact check is a best-effort AI review, not a guarantee. Review the
 
 ## Services
 
-The Compose stack starts these services:
+The Compose stack provides these services. `n8n` and `crawl4ai` require the optional `job-scanner` profile:
 
 - `frontend`: serves the SPA on `http://127.0.0.1:${FRONTEND_PORT}`
 - `backend`: FastAPI API on `http://127.0.0.1:8000`
@@ -118,7 +118,23 @@ To delete the database, n8n data, and backup volumes as well, run `docker compos
 
 ### Optional job-scanning setup
 
-The job-scanning workflows are separate from resume optimization. To use them, open n8n at `http://localhost:15678` (or your configured `N8N_HOST_PORT`), create its initial owner account, and import the applicable workflow JSON from `n8n/workflows/`. Configure the provider credentials and workflow settings it requires, and ensure the webhook secret matches `N8N_WEBHOOK_SECRET` in `.env`. The crawl4ai service is started by Compose; set its token using `CRAWL4AI_TOKEN` if you use crawl requests that require authentication.
+Job scanning is disabled globally by default. The Job Scanner tab is hidden and scanner API calls are blocked until the administrator unchecks **Disable Job Scanner** in the profile menu. The setting is global and available only to the `admin` account.
+
+Start the optional scanner services with:
+
+```bash
+docker compose --profile job-scanner up -d n8n crawl4ai
+```
+
+Then open n8n at `http://localhost:15678` (or your configured `N8N_HOST_PORT`), create its initial owner account, and import the applicable workflow JSON from `n8n/workflows/`. Configure the provider credentials and workflow settings it requires. Ensure the webhook secret matches `N8N_WEBHOOK_SECRET` in `.env`, then uncheck **Disable Job Scanner** in the app profile menu to expose scanning to all users.
+
+Checking **Disable Job Scanner** hides the page for all users, blocks scanner API endpoints, and deactivates scheduled scans. The app setting does not stop containers that are already running. Stop them immediately with:
+
+```bash
+docker compose stop n8n crawl4ai
+```
+
+Because these services use the opt-in Compose profile and have no Docker restart policy, regular `docker compose up -d` and Docker daemon restarts do not start them automatically. To use the scanner again, start the profile and re-enable the feature in the app. n8n data remains in its named Docker volume when its container is stopped or removed.
 
 ## Environment variables
 
@@ -129,8 +145,8 @@ Use a local `.env` file for the Compose substitutions below. The PostgreSQL cred
 | `TIMEZONE` | Time zone used by the containers |
 | `FRONTEND_PORT` | Host port for the frontend container |
 | `DB_HOST_PORT` | Host port for PostgreSQL |
-| `N8N_HOST_PORT` | Host port for n8n |
-| `CRAWL4AI_PORT` | Host port for the crawl4ai container |
+| `N8N_HOST_PORT` | Host port for n8n when the `job-scanner` profile is enabled |
+| `CRAWL4AI_PORT` | Host port for crawl4ai when the `job-scanner` profile is enabled |
 | `N8N_WEBHOOK_SECRET` | Shared secret for backend to n8n webhook requests |
 | `N8N_ENCRYPTION_KEY` | n8n encryption key |
 | `CRAWL4AI_TOKEN` | API token for the crawl4ai service |
@@ -145,10 +161,11 @@ Note: Windows can dynamically reserve some local ports, which can make Docker po
 4. Run an optimization from the main form.
 5. Review results in the app, then export resume or cover-letter PDFs.
 6. Revisit prior runs from History.
+7. Optionally start the Job Scanner Compose profile and enable the scanner globally from the profile menu.
 
 ## Notes
 
-- The backend stores user accounts, history, saved resume data, and encrypted provider API keys in PostgreSQL.
+- The backend stores user accounts, history, uploaded resume PDFs and extracted text in each user's library, the separate Job Scanner profile resume, encrypted provider API keys, and the global Job Scanner setting in PostgreSQL.
 - On startup, the backend creates the tables and seeds the `admin` account if one does not already exist. The hard-coded fallback means changing this account's password through the UI does not disable the default password; keep the app local until that fallback is removed.
 - Manual SQL files under `migrations/` are not required to build or run the Docker stack, so they are left out of version control for this repo.
 
@@ -198,7 +215,7 @@ Go to the **Settings** tab and fill in your AI provider details (see above). Cli
 
 1. Open the **Resume Optimizer** tab.
 2. Fill in **Job Role**, **Company Name**, **Job URL**, and **Job Description**.
-3. Upload a text-readable **Resume PDF**. Pasted Markdown is not accepted by the optimizer form, and image-only/scanned PDFs may need OCR before upload.
+3. Upload a text-readable **Resume PDF**, or open **Previously uploaded** to preview and select one from the dated resume-library modal. New uploads are saved to your account and can be previewed or reused later. Pasted Markdown is not accepted by the optimizer form, and image-only/scanned PDFs may need OCR before upload.
 4. Choose the human-tone setting if desired, then click **Optimize My Resume**.
 5. Keep the page open while optimization runs. When complete, the results are displayed and the app may send a browser notification if permission is granted.
 
@@ -282,7 +299,9 @@ Selected endpoints are listed below. All API endpoints are on the backend at `ht
 | `POST` | `/register` | Create a new user account |
 | `POST` | `/login` | Authenticate; returns JWT token |
 | `POST` | `/change-password` | Change password for authenticated user |
-| `POST` | `/optimize` | Run AI resume optimization |
+| `GET` | `/settings/job-scanner` | Read whether the global Job Scanner feature is enabled |
+| `PUT` | `/settings/job-scanner` | Enable or disable Job Scanner globally (admin only; JSON: `enabled`) |
+| `POST` | `/optimize` | Run AI resume optimization (provide either an uploaded `resume` or a saved `resume_id`) |
 | `POST` | `/generate-cover-letter` | Generate a cover letter |
 | `POST` | `/generate-outreach` | Generate LinkedIn outreach content |
 | `POST` | `/pdf/render` | Render Markdown to PDF (returns binary) |
@@ -300,7 +319,10 @@ Selected endpoints are listed below. All API endpoints are on the backend at `ht
 | `DELETE` | `/provider-api-key` | Remove a stored provider API key (query: `provider`) |
 | `GET` | `/provider-api-keys/status` | List supported providers and whether a key is stored for the current user |
 | `GET` | `/provider-api-key` | Retrieve the current user's stored provider API key (query: `provider`) |
-| `POST` | `/resume/store` | Upload a resume PDF; server extracts and stores plain text (`multipart/form-data`) |
+| `POST` | `/resume/uploads` | Save an uploaded PDF and extracted text to the current user's resume library (`multipart/form-data`, field: `resume`) |
+| `GET` | `/resume/uploads` | List the current user's uploaded resumes, newest first |
+| `GET` | `/resume/uploads/{resume_id}/file` | View a resume PDF from the current user's library |
+| `POST` | `/resume/store` | Upload a separate Job Scanner profile resume; server extracts and stores plain text (`multipart/form-data`) |
 | `GET` | `/resume/stored` | Return stored resume preview and parsed profile for the current user |
 | `POST` | `/resume/profile/ai` | Run an AI model against the stored resume to infer a structured profile (form params: `lm_url`, `lm_model`, `provider`, `api_key`) |
 | `DELETE` | `/resume/stored` | Delete the stored resume for the current user |
@@ -325,8 +347,8 @@ Interactive API docs (Swagger UI) are available at `http://localhost:8000/docs` 
 | Frontend (nginx) | 80 | `127.0.0.1:18080` (configurable via `FRONTEND_PORT`) |
 | Backend (FastAPI) | 8000 | `127.0.0.1:8000` |
 | Database (PostgreSQL) | 5432 | `127.0.0.1:15432` (configurable via `DB_HOST_PORT`) |
-| n8n | 5678 | `127.0.0.1:15678` (configurable via `N8N_HOST_PORT`) |
-| crawl4ai | 11235 | `127.0.0.1:21235` (configurable via `CRAWL4AI_PORT`) |
+| n8n (optional profile) | 5678 | `127.0.0.1:15678` (configurable via `N8N_HOST_PORT`) |
+| crawl4ai (optional profile) | 11235 | `127.0.0.1:21235` (configurable via `CRAWL4AI_PORT`) |
 
 All ports are bound to `127.0.0.1` — accessible only from the local machine.
 

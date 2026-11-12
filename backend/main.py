@@ -18,11 +18,12 @@ import httpx
 import pdfplumber
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from openai import AsyncOpenAI
 from passlib.context import CryptContext
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, UniqueConstraint, create_engine, inspect, text
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, LargeBinary, String, Text, UniqueConstraint, create_engine, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from cryptography.fernet import Fernet
 
@@ -50,6 +51,7 @@ if not logger.handlers:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 BACKUP_STORE_PATH = os.getenv("BACKUP_STORE_PATH", "/app/data/backups")
+MAX_RESUME_UPLOAD_BYTES = 20 * 1024 * 1024
 N8N_WEBHOOK_SECRET = os.getenv("N8N_WEBHOOK_SECRET", "resume-modifier-n8n-secret")
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "http://resume_modifier_n8n:5678/webhook/job-scan")
 SCHEDULE_TASK_POLL_SECONDS = int(os.getenv("SCHEDULE_TASK_POLL_SECONDS", "60"))
@@ -124,6 +126,13 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
 
+
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+    key = Column(String, primary_key=True)
+    value = Column(String, nullable=False)
+
+
 class Document(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
@@ -153,6 +162,16 @@ class StoredResume(Base):
     resume_text = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UploadedResume(Base):
+    __tablename__ = "uploaded_resumes"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=False)
+    filename = Column(String, nullable=False)
+    pdf_data = Column(LargeBinary, nullable=False)
+    resume_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class JobListing(Base):
@@ -295,6 +314,8 @@ def ensure_new_tables():
     inspector = inspect(engine)
     if not inspector.has_table("stored_resumes"):
         StoredResume.__table__.create(bind=engine)
+    if not inspector.has_table("uploaded_resumes"):
+        UploadedResume.__table__.create(bind=engine)
     if not inspector.has_table("job_listings"):
         JobListing.__table__.create(bind=engine)
     if not inspector.has_table("provider_api_keys"):
@@ -518,6 +539,11 @@ def _build_task_scan_payload(task: ScheduledScanTask) -> dict:
     )
 
 
+def _job_scanner_is_enabled(db: Session) -> bool:
+    value = db.query(AppSetting.value).filter(AppSetting.key == "job_scanner_enabled").scalar()
+    return bool(value and value.lower() == "true")
+
+
 async def _trigger_scan_via_n8n(payload: dict) -> httpx.Response:
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(N8N_WEBHOOK_URL, json=payload)
@@ -533,12 +559,16 @@ async def _run_due_scheduled_scans() -> None:
     db = SessionLocal()
     now_utc = datetime.utcnow().replace(tzinfo=ZoneInfo("UTC"))
     try:
+        if not _job_scanner_is_enabled(db):
+            return
         tasks = db.query(ScheduledScanTask).filter(
             ScheduledScanTask.active == True,
             ScheduledScanTask.scan_model != "",
         ).all()
 
         for task in tasks:
+            if not _job_scanner_is_enabled(db):
+                return
             try:
                 if not _is_task_due(task, now_utc):
                     continue
@@ -641,6 +671,29 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+JOB_SCANNER_API_PREFIXES = ("/listings/", "/scan-config/", "/scan-schedule/", "/n8n/")
+
+
+@app.middleware("http")
+async def require_enabled_job_scanner(request: Request, call_next):
+    path = request.url.path
+    scanner_api = (
+        path in {"/listings", "/scan-config"}
+        or path.startswith(JOB_SCANNER_API_PREFIXES)
+    )
+    if scanner_api and request.method != "OPTIONS":
+        db = SessionLocal()
+        try:
+            if not _job_scanner_is_enabled(db):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "The job scanner is disabled by the administrator."},
+                )
+        finally:
+            db.close()
+    return await call_next(request)
 
 
 @app.on_event("startup")
@@ -1920,8 +1973,6 @@ def render_pdf(
     html_doc = _render_markdown_to_pdf_html(markdown, template, title, doc_type)
     pdf_bytes = HTML(string=html_doc, base_url="/").write_pdf()
 
-    from fastapi.responses import Response
-
     filename = _safe_file_name(title, "document") + ".pdf"
     return Response(
         content=pdf_bytes,
@@ -2437,7 +2488,8 @@ def delete_provider_api_key(
 @app.post("/optimize")
 async def optimize_resume(
     jd: str = Form(...), 
-    resume: UploadFile = File(...), 
+    resume: UploadFile | None = File(None),
+    resume_id: int | None = Form(None),
     job_role: str = Form(...),
     company_name: str = Form(...),
     job_url: str = Form(...),
@@ -2477,7 +2529,9 @@ async def optimize_resume(
         valid_job_url = False
     if not valid_job_url:
         raise HTTPException(status_code=400, detail="A valid Job URL is required")
-    if not resume.filename or not resume.filename.lower().endswith(".pdf"):
+    if resume_id is not None and resume is not None and resume.filename:
+        raise HTTPException(status_code=400, detail="Provide either a saved resume or a new PDF, not both.")
+    if resume_id is None and (resume is None or not resume.filename or not resume.filename.lower().endswith(".pdf")):
         raise HTTPException(status_code=400, detail="Resume PDF is required")
 
     logger.info(
@@ -2491,18 +2545,32 @@ async def optimize_resume(
     )
     human_tone = normalize_human_tone_mode(human_tone)
     temp_settings = resolve_temperature_settings(temp_mode, temp_core, temp_interview, temp_cover_letter, temp_outreach)
-    file_bytes = await resume.read()
-    if not file_bytes:
-        raise HTTPException(status_code=400, detail="Resume PDF is empty")
-    try:
-        resume_text = extract_resume_text(file_bytes)
-    except Exception as e:
-        logger.error("Resume PDF extraction failed for user_id=%s: %s", current_user.id, str(e))
-        logger.error("Traceback:\n%s", traceback.format_exc())
-        raise HTTPException(
-            status_code=400,
-            detail="Unable to read text from the uploaded PDF. Please upload a text-based PDF (not a scanned image PDF) or run OCR first.",
+    if resume_id is not None:
+        saved_resume = (
+            db.query(UploadedResume.resume_text)
+            .filter(UploadedResume.id == resume_id, UploadedResume.user_id == current_user.id)
+            .first()
         )
+        if saved_resume is None:
+            raise HTTPException(status_code=404, detail="Selected resume was not found.")
+        resume_text = saved_resume[0]
+    else:
+        if resume is None:
+            raise HTTPException(status_code=400, detail="Resume PDF is required")
+        file_bytes = await resume.read(MAX_RESUME_UPLOAD_BYTES + 1)
+        if len(file_bytes) > MAX_RESUME_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Resume PDF must be 20 MB or smaller.")
+        if not file_bytes:
+            raise HTTPException(status_code=400, detail="Resume PDF is empty")
+        try:
+            resume_text = extract_resume_text(file_bytes)
+        except Exception as e:
+            logger.error("Resume PDF extraction failed for user_id=%s: %s", current_user.id, str(e))
+            logger.error("Traceback:\n%s", traceback.format_exc())
+            raise HTTPException(
+                status_code=400,
+                detail="Unable to read text from the uploaded PDF. Please upload a text-based PDF (not a scanned image PDF) or run OCR first.",
+            )
 
     if not resume_text:
         raise HTTPException(
@@ -3116,6 +3184,100 @@ CRITICAL: Do NOT fabricate experience. Only use what exists in the source resume
         raise HTTPException(status_code=500, detail=str(e))
 
 # -- Stored Resume Endpoints --
+
+@app.get("/resume/uploads")
+def list_resume_uploads(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    uploads = (
+        db.query(UploadedResume.id, UploadedResume.filename, UploadedResume.created_at)
+        .filter(UploadedResume.user_id == current_user.id)
+        .order_by(UploadedResume.created_at.desc(), UploadedResume.id.desc())
+        .all()
+    )
+    return {
+        "resumes": [
+            {
+                "id": upload.id,
+                "filename": upload.filename,
+                "created_at": upload.created_at.isoformat(),
+            }
+            for upload in uploads
+        ]
+    }
+
+
+@app.post("/resume/uploads")
+async def upload_resume(
+    resume: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    original_filename = os.path.basename((resume.filename or "").replace("\\", "/"))
+    if not original_filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Please upload a PDF resume.")
+
+    file_bytes = await resume.read(MAX_RESUME_UPLOAD_BYTES + 1)
+    if len(file_bytes) > MAX_RESUME_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Resume PDF must be 20 MB or smaller.")
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Resume PDF is empty.")
+
+    try:
+        resume_text = extract_resume_text(file_bytes)
+    except Exception as exc:
+        logger.info("Resume upload PDF extraction failed for user_id=%s: %s", current_user.id, exc)
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to read text from the uploaded PDF. Please upload a text-readable PDF.",
+        )
+    if not resume_text:
+        raise HTTPException(
+            status_code=400,
+            detail="No readable text was found in the uploaded PDF. Please upload a text-readable PDF.",
+        )
+
+    filename = f"{_safe_file_name(os.path.splitext(original_filename)[0], 'resume')}.pdf"
+    upload = UploadedResume(
+        user_id=current_user.id,
+        filename=filename,
+        pdf_data=file_bytes,
+        resume_text=resume_text,
+        created_at=datetime.utcnow(),
+    )
+    db.add(upload)
+    db.commit()
+    db.refresh(upload)
+    return {
+        "id": upload.id,
+        "filename": upload.filename,
+        "created_at": upload.created_at.isoformat(),
+    }
+
+
+@app.get("/resume/uploads/{resume_id}/file")
+def get_resume_upload_file(
+    resume_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    upload = (
+        db.query(UploadedResume)
+        .filter(UploadedResume.id == resume_id, UploadedResume.user_id == current_user.id)
+        .first()
+    )
+    if upload is None:
+        raise HTTPException(status_code=404, detail="Uploaded resume not found.")
+    return Response(
+        content=upload.pdf_data,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{upload.filename}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
+
 
 @app.post("/resume/store")
 async def store_resume(
@@ -4221,6 +4383,58 @@ async def _generate_outreach_payload(
     }
 
 # -- Scan Config & n8n Endpoints --
+
+@app.get("/settings/job-scanner")
+def get_job_scanner_setting(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return {
+        "enabled": _job_scanner_is_enabled(db),
+        "can_manage": current_user.username == "admin",
+    }
+
+
+@app.put("/settings/job-scanner")
+async def update_job_scanner_setting(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.username != "admin":
+        raise HTTPException(status_code=403, detail="Only the administrator can change the global job scanner setting.")
+
+    try:
+        data = await request.json()
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    enabled = data.get("enabled") if isinstance(data, dict) else None
+    if not isinstance(enabled, bool):
+        raise HTTPException(status_code=400, detail="enabled must be a boolean")
+
+    setting = db.get(AppSetting, "job_scanner_enabled")
+    if setting is None:
+        setting = AppSetting(key="job_scanner_enabled", value=str(enabled).lower())
+        db.add(setting)
+    else:
+        setting.value = str(enabled).lower()
+
+    if not enabled:
+        db.query(ScheduledScanTask).filter(ScheduledScanTask.active == True).update(
+            {ScheduledScanTask.active: False},
+            synchronize_session=False,
+        )
+        db.query(ScanConfig).update(
+            {
+                ScanConfig.schedule_enabled: False,
+                ScanConfig.schedule_frequency: "off",
+            },
+            synchronize_session=False,
+        )
+
+    db.commit()
+    return {"enabled": enabled}
+
 
 @app.get("/scan-config")
 def get_scan_config(
