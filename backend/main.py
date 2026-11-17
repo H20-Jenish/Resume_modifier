@@ -1324,7 +1324,8 @@ async def request_ollama(
         headers["Authorization"] = f"Bearer {api_key}"
 
     base = _strip_lm_v1_suffix(lm_url or "").rstrip("/")
-    endpoints = [f"{base}/chat", f"{base}/api/chat"]
+    path = urlparse(base).path.rstrip("/").lower()
+    endpoints = [f"{base}/chat"] if path.endswith("/api") else [f"{base}/api/chat", f"{base}/chat"]
     # Keep order stable but avoid duplicate attempts.
     uniq_endpoints = []
     seen_endpoints = set()
@@ -1358,6 +1359,12 @@ async def request_ollama(
                 return payload.get("message", {}).get("content", "")
             except Exception as exc:
                 last_error = exc
+                if (
+                    isinstance(exc, httpx.HTTPStatusError)
+                    and exc.response is not None
+                    and exc.response.status_code in {401, 402, 403, 429}
+                ):
+                    raise
                 continue
 
         if last_error is not None:
@@ -3170,6 +3177,11 @@ CRITICAL: Do NOT fabricate experience. Only use what exists in the source resume
         detail = e.response.text if e.response is not None else str(e)
         logger.error("Optimize upstream HTTP error: provider=%s model=%s status=%s detail=%s", provider, lm_model, e.response.status_code if e.response else "unknown", detail)
         logger.error("Traceback:\n%s", traceback.format_exc())
+        if provider == "ollama" and e.response is not None and e.response.status_code == 402:
+            raise HTTPException(
+                status_code=502,
+                detail="Ollama Cloud returned 402 Payment Required. Check billing and access for the selected model, then retry.",
+            )
         raise HTTPException(status_code=500, detail=detail)
     except httpx.ReadTimeout:
         logger.error("Optimize timeout: provider=%s model=%s user_id=%s lm_url=%s", provider, lm_model, current_user.id, lm_url)

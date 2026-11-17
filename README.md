@@ -195,6 +195,8 @@ If your LM Studio server is configured to require an API token, enter that token
    - Base URL: `http://host.docker.internal:11434`
    - Model: `llama3` (or whichever model you pulled)
 
+For Ollama Cloud, use the base URL `https://ollama.com/api/v1` and provide an Ollama API key in Settings. If resume optimization reports **402 Payment Required**, check that your Ollama account has the required billing or credits and that your account can access the selected model. The optimizer will show a billing/access message; this response comes from Ollama, not from resume validation.
+
 #### Other OpenAI-compatible APIs
 
 The main Settings screen offers LM Studio and Ollama. For another OpenAI-compatible endpoint, choose **LM Studio**, enter the service's OpenAI-compatible base URL and model identifier, and provide its API key. Requests are sent to the configured endpoint; an external provider will receive the resume and job data submitted for processing.
